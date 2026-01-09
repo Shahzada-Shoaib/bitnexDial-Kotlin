@@ -11,6 +11,7 @@ import com.bitnextechnologies.bitnexdial.domain.model.SipTransport
 import com.bitnextechnologies.bitnexdial.data.preferences.ThemePreferences
 import com.bitnextechnologies.bitnexdial.data.repository.ContactRepository
 import com.bitnextechnologies.bitnexdial.domain.repository.IAuthRepository
+import com.bitnextechnologies.bitnexdial.domain.repository.IContactRepository
 import com.bitnextechnologies.bitnexdial.domain.repository.ISipRepository
 import com.bitnextechnologies.bitnexdial.domain.repository.SipRegistrationState
 import com.bitnextechnologies.bitnexdial.util.Constants
@@ -50,6 +51,7 @@ class MainViewModel @Inject constructor(
     private val messageRepository: com.bitnextechnologies.bitnexdial.domain.repository.IMessageRepository,
     private val badgeManager: com.bitnextechnologies.bitnexdial.util.BadgeManager,
     private val contactRepository: ContactRepository,
+    private val apiContactRepository: IContactRepository,
     themePreferences: ThemePreferences
 ) : ViewModel() {
 
@@ -239,6 +241,15 @@ class MainViewModel @Inject constructor(
                 Log.d(TAG, "Device contacts loaded!")
             } catch (e: Exception) {
                 Log.e(TAG, "Failed to load device contacts", e)
+            }
+
+            // Sync API contacts - required for call logs to show names
+            try {
+                Log.d(TAG, "Syncing API contacts from server...")
+                apiContactRepository.syncContacts()
+                Log.d(TAG, "API contacts sync completed!")
+            } catch (e: Exception) {
+                Log.e(TAG, "Failed to sync API contacts", e)
             }
 
             // Sync call history
