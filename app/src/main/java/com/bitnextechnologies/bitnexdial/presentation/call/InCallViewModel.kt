@@ -238,6 +238,10 @@ class InCallViewModel @Inject constructor(
                     }
                     SipCallState.CONNECTED -> {
                         stopRingback()
+                        // Ensure earpiece audio routing when call connects
+                        if (!_isSpeaker.value) {
+                            ensureEarpieceAudioRouting()
+                        }
                         if (durationJob == null) {
                             startDurationTimer()
                         }
@@ -354,11 +358,60 @@ class InCallViewModel @Inject constructor(
                 // Ensure audio mode is set for voice call before creating ToneGenerator
                 // This must be done on main thread for some devices
                 withContext(Dispatchers.Main) {
+                    // Set audio mode first
                     audioManager.mode = AudioManager.MODE_IN_COMMUNICATION
+                    
+                    // Explicitly disable speaker
+                    _isSpeaker.value = false
                     setSpeakerphoneEnabled(false)
+                    
+                    // Force earpiece routing for Android 12+
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                        val devices = audioManager.availableCommunicationDevices
+                        val earpieceDevice = devices.find {
+                            it.type == AudioDeviceInfo.TYPE_BUILTIN_EARPIECE
+                        }
+                        earpieceDevice?.let {
+                            val success = audioManager.setCommunicationDevice(it)
+                            Log.d(TAG, "Ringback: Set earpiece device, success=$success")
+                        } ?: run {
+                            Log.w(TAG, "Ringback: Earpiece device not found")
+                            audioManager.clearCommunicationDevice()
+                        }
+                    } else {
+                        // For older Android versions, ensure speaker is off
+                        @Suppress("DEPRECATION")
+                        audioManager.isSpeakerphoneOn = false
+                    }
                 }
 
-                // Small delay to ensure audio routing is applied
+                // Longer delay to ensure audio routing is fully applied
+                delay(300)
+
+                // Verify audio routing before creating ToneGenerator
+                withContext(Dispatchers.Main) {
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                        val currentDevice = audioManager.communicationDevice
+                        if (currentDevice?.type != AudioDeviceInfo.TYPE_BUILTIN_EARPIECE) {
+                            Log.w(TAG, "Ringback: Audio not routed to earpiece, retrying...")
+                            val devices = audioManager.availableCommunicationDevices
+                            val earpieceDevice = devices.find {
+                                it.type == AudioDeviceInfo.TYPE_BUILTIN_EARPIECE
+                            }
+                            earpieceDevice?.let {
+                                audioManager.setCommunicationDevice(it)
+                            }
+                        }
+                    } else {
+                        @Suppress("DEPRECATION")
+                        if (audioManager.isSpeakerphoneOn) {
+                            Log.w(TAG, "Ringback: Speaker still on, disabling...")
+                            audioManager.isSpeakerphoneOn = false
+                        }
+                    }
+                }
+                
+                // Additional delay if retry was needed
                 delay(100)
 
                 // Use STREAM_VOICE_CALL for earpiece routing during calls
@@ -418,10 +471,53 @@ class InCallViewModel @Inject constructor(
             // Ensure speaker is off and audio goes to earpiece
             _isSpeaker.value = false
             setSpeakerphoneEnabled(false)
+            
+            // Force earpiece routing for Android 12+ (same as startRingback)
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                val devices = audioManager.availableCommunicationDevices
+                val earpieceDevice = devices.find {
+                    it.type == AudioDeviceInfo.TYPE_BUILTIN_EARPIECE
+                }
+                earpieceDevice?.let {
+                    audioManager.setCommunicationDevice(it)
+                    Log.d(TAG, "Initialize: Set earpiece device")
+                } ?: run {
+                    Log.w(TAG, "Initialize: Earpiece device not found")
+                    audioManager.clearCommunicationDevice()
+                }
+            } else {
+                // For older Android versions, ensure speaker is off
+                @Suppress("DEPRECATION")
+                audioManager.isSpeakerphoneOn = false
+            }
 
             Log.d(TAG, "Audio initialized for call: mode=IN_COMMUNICATION, speaker=OFF")
         } catch (e: Exception) {
             Log.e(TAG, "Failed to initialize audio for call", e)
+        }
+    }
+
+    /**
+     * Ensure audio routing to earpiece when call connects.
+     * Only called if speaker is not explicitly enabled by user.
+     */
+    private fun ensureEarpieceAudioRouting() {
+        try {
+            audioManager.mode = AudioManager.MODE_IN_COMMUNICATION
+            setSpeakerphoneEnabled(false)
+            
+            // Force earpiece routing for Android 12+
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                val devices = audioManager.availableCommunicationDevices
+                val earpieceDevice = devices.find {
+                    it.type == AudioDeviceInfo.TYPE_BUILTIN_EARPIECE
+                }
+                earpieceDevice?.let {
+                    audioManager.setCommunicationDevice(it)
+                }
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to ensure earpiece audio routing", e)
         }
     }
 
