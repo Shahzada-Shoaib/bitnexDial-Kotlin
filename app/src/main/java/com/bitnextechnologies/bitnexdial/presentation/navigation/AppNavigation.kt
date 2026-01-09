@@ -132,6 +132,7 @@ fun AppNavigation(
     isLoggedIn: Boolean,
     missedCallCount: Int = 0,
     unreadMessageCount: Int = 0,
+    unreadVoicemailCount: Int = 0,
     onMakeCall: (String, String?) -> Unit,  // (phoneNumber, contactName)
     onLoginSuccess: () -> Unit = {}
 ) {
@@ -173,6 +174,7 @@ fun AppNavigation(
                         val badgeCount = when (item) {
                             BottomNavItem.Recents -> missedCallCount
                             BottomNavItem.Messages -> unreadMessageCount
+                            BottomNavItem.Voicemail -> unreadVoicemailCount
                             else -> 0
                         }
 

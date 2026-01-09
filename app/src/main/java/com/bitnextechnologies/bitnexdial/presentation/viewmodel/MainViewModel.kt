@@ -10,6 +10,12 @@ import com.bitnextechnologies.bitnexdial.domain.model.SipConfig
 import com.bitnextechnologies.bitnexdial.domain.model.SipTransport
 import com.bitnextechnologies.bitnexdial.data.preferences.ThemePreferences
 import com.bitnextechnologies.bitnexdial.data.repository.ContactRepository
+import com.bitnextechnologies.bitnexdial.data.local.dao.VoicemailDao
+import com.bitnextechnologies.bitnexdial.data.local.entity.VoicemailEntity
+import com.bitnextechnologies.bitnexdial.data.remote.api.BitnexApiService
+import com.bitnextechnologies.bitnexdial.data.security.SecureCredentialManager
+import com.bitnextechnologies.bitnexdial.BuildConfig
+import com.bitnextechnologies.bitnexdial.util.PhoneNumberUtils
 import com.bitnextechnologies.bitnexdial.domain.repository.IAuthRepository
 import com.bitnextechnologies.bitnexdial.domain.repository.IContactRepository
 import com.bitnextechnologies.bitnexdial.domain.repository.ISipRepository
@@ -52,6 +58,9 @@ class MainViewModel @Inject constructor(
     private val badgeManager: com.bitnextechnologies.bitnexdial.util.BadgeManager,
     private val contactRepository: ContactRepository,
     private val apiContactRepository: IContactRepository,
+    private val voicemailDao: VoicemailDao,
+    private val apiService: BitnexApiService,
+    private val secureCredentialManager: SecureCredentialManager,
     themePreferences: ThemePreferences
 ) : ViewModel() {
 
@@ -109,6 +118,13 @@ class MainViewModel @Inject constructor(
             initialValue = 0
         )
 
+    val unreadVoicemailCount: StateFlow<Int> = voicemailDao.getUnreadVoicemailCount()
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.Eagerly, // Start eagerly to ensure badge updates immediately
+            initialValue = 0
+        )
+
     init {
         checkLoginStatus()
         observeAuthState()
@@ -133,11 +149,11 @@ class MainViewModel @Inject constructor(
      */
     private fun observeBadgeCounts() {
         viewModelScope.launch {
-            // Combine both counts and update launcher badge
-            combine(missedCallCount, unreadMessageCount) { missed, messages ->
-                Pair(missed, messages)
-            }.collect { (missed, messages) ->
-                badgeManager.updateBadgeCount(missed, messages)
+            // Combine all counts and update launcher badge
+            combine(missedCallCount, unreadMessageCount, unreadVoicemailCount) { missed, messages, voicemails ->
+                Triple(missed, messages, voicemails)
+            }.collect { (missed, messages, voicemails) ->
+                badgeManager.updateBadgeCount(missed, messages, voicemails)
             }
         }
     }
@@ -269,6 +285,87 @@ class MainViewModel @Inject constructor(
             } catch (e: Exception) {
                 Log.e(TAG, "Failed to sync messages", e)
             }
+
+            // Sync voicemails
+            try {
+                Log.d(TAG, "Syncing voicemails from server...")
+                syncVoicemails()
+                Log.d(TAG, "Voicemails sync completed!")
+            } catch (e: Exception) {
+                Log.e(TAG, "Failed to sync voicemails", e)
+            }
+        }
+    }
+
+    /**
+     * Sync voicemails from server - called after login to ensure badge shows immediately
+     */
+    private suspend fun syncVoicemails() {
+        val mailbox = secureCredentialManager.getSipCredentials()?.username ?: ""
+        if (mailbox.isEmpty()) {
+            Log.w(TAG, "syncVoicemails: No mailbox available, skipping")
+            return
+        }
+
+        try {
+            Log.d(TAG, "syncVoicemails: Fetching voicemails for mailbox=$mailbox")
+            val response = apiService.getVoicemails(mailbox = mailbox)
+            if (response.isSuccessful && response.body() != null) {
+                val voicemailList = response.body() ?: return
+                Log.d(TAG, "syncVoicemails: Got ${voicemailList.size} voicemails")
+
+                val voicemails = voicemailList.mapNotNull { dto ->
+                    val id = dto.id ?: dto.msgnum?.toString() ?: return@mapNotNull null
+
+                    val audioUrl = dto.audioUrl?.let { url ->
+                        if (url.startsWith("/")) BuildConfig.API_BASE_URL + url else url
+                    }
+
+                    val rawCallerId = dto.callerNumber ?: dto.callerId ?: ""
+                    val cleanCallerNumber = PhoneNumberUtils.parseSipCallerId(rawCallerId)
+                    val callerNameFromSip = PhoneNumberUtils.parseSipCallerName(rawCallerId)
+
+                    VoicemailEntity(
+                        id = id,
+                        callerNumber = cleanCallerNumber,
+                        callerName = callerNameFromSip,
+                        contactId = null,
+                        duration = dto.duration ?: 0,
+                        isRead = (dto.read ?: 0) == 1,
+                        transcription = dto.transcription,
+                        audioUrl = audioUrl,
+                        localAudioPath = null,
+                        receivedAt = dto.origTime?.let { it * 1000 } ?: dto.receivedAt?.let { parseDateTime(it) } ?: System.currentTimeMillis(),
+                        createdAt = System.currentTimeMillis(),
+                        syncedAt = System.currentTimeMillis()
+                    )
+                }
+
+                // Always insert voicemails (even if empty list) to ensure database is synced
+                voicemailDao.insertVoicemails(voicemails)
+                Log.d(TAG, "syncVoicemails: Saved ${voicemails.size} voicemails to local database")
+                
+                // Log unread count for debugging
+                val unreadCount = voicemailDao.getUnreadVoicemailCountDirect()
+                Log.d(TAG, "syncVoicemails: Unread voicemail count after sync: $unreadCount")
+            } else {
+                Log.e(TAG, "syncVoicemails: API error - ${response.code()} ${response.message()}")
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "syncVoicemails: Error fetching voicemails", e)
+        }
+    }
+
+    /**
+     * Parse datetime string to timestamp
+     */
+    private fun parseDateTime(dateString: String): Long {
+        return try {
+            java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", java.util.Locale.US).apply {
+                timeZone = java.util.TimeZone.getTimeZone("UTC")
+            }.parse(dateString)?.time ?: System.currentTimeMillis()
+        } catch (e: Exception) {
+            System.currentTimeMillis()
         }
     }
 

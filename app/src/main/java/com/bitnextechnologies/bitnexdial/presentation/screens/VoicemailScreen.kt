@@ -21,10 +21,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.bitnextechnologies.bitnexdial.domain.model.Voicemail
 import com.bitnextechnologies.bitnexdial.presentation.theme.BitNexGreen
@@ -38,7 +38,8 @@ fun VoicemailScreen(
     viewModel: VoicemailViewModel = hiltViewModel(),
     onCallBack: (String) -> Unit
 ) {
-    val voicemails by viewModel.voicemails.collectAsState()
+    val filteredVoicemails by viewModel.filteredVoicemails.collectAsState()
+    val selectedFilter by viewModel.selectedFilter.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
     val isRefreshing by viewModel.isRefreshing.collectAsState()
     val playingVoicemailId by viewModel.playingVoicemailId.collectAsState()
@@ -47,6 +48,24 @@ fun VoicemailScreen(
     val currentPositionMs by viewModel.currentPositionMs.collectAsState()
     val durationMs by viewModel.durationMs.collectAsState()
     val playbackSpeed by viewModel.playbackSpeed.collectAsState()
+    val visuallyReadVoicemails by viewModel.visuallyReadVoicemails.collectAsState()
+
+    // Mark visually read voicemails as actually read when:
+    // 1. User switches to Read filter (they're viewing read tab, so mark the visually read ones)
+    // 2. Screen is disposed (user navigates away)
+    LaunchedEffect(selectedFilter) {
+        if (selectedFilter == VoicemailViewModel.FilterType.READ && visuallyReadVoicemails.isNotEmpty()) {
+            // User switched to read tab, mark visually read as actually read
+            viewModel.markVisuallyReadAsRead()
+        }
+    }
+
+    // Mark visually read voicemails as actually read when screen is disposed
+    DisposableEffect(Unit) {
+        onDispose {
+            viewModel.markVisuallyReadAsRead()
+        }
+    }
 
     Scaffold(
         topBar = {
@@ -58,7 +77,7 @@ fun VoicemailScreen(
                     )
                 },
                 actions = {
-                    if (isLoading && voicemails.isNotEmpty()) {
+                    if (isLoading && filteredVoicemails.isNotEmpty()) {
                         CircularProgressIndicator(
                             modifier = Modifier
                                 .size(20.dp)
@@ -80,84 +99,121 @@ fun VoicemailScreen(
                 .fillMaxSize()
                 .padding(paddingValues)
         ) {
-            // Show loading only on initial load when data is empty
-            if (isLoading && voicemails.isEmpty()) {
-                Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center
-                ) {
-                    CircularProgressIndicator()
-                }
-            } else if (voicemails.isEmpty()) {
-                // Empty state
-                Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        modifier = Modifier.padding(32.dp)
+            Column(modifier = Modifier.fillMaxSize()) {
+                // Filter tabs
+                FilterTabs(
+                    selectedFilter = selectedFilter,
+                    onFilterSelected = { viewModel.setFilter(it) }
+                )
+
+                // Show loading only on initial load when data is empty
+                if (isLoading && filteredVoicemails.isEmpty()) {
+                    Box(
+                        modifier = Modifier.weight(1f),
+                        contentAlignment = Alignment.Center
                     ) {
-                        Box(
-                            modifier = Modifier
-                                .size(80.dp)
-                                .clip(CircleShape)
-                                .background(MaterialTheme.colorScheme.surfaceVariant),
-                            contentAlignment = Alignment.Center
+                        CircularProgressIndicator()
+                    }
+                } else if (filteredVoicemails.isEmpty()) {
+                    // Empty state
+                    Box(
+                        modifier = Modifier.weight(1f),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            modifier = Modifier.padding(32.dp)
                         ) {
-                            Icon(
-                                imageVector = Icons.Default.Voicemail,
-                                contentDescription = null,
-                                modifier = Modifier.size(40.dp),
-                                tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
+                            Box(
+                                modifier = Modifier
+                                    .size(80.dp)
+                                    .clip(CircleShape)
+                                    .background(MaterialTheme.colorScheme.surfaceVariant),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Voicemail,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(40.dp),
+                                    tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
+                                )
+                            }
+                            Spacer(modifier = Modifier.height(24.dp))
+                            Text(
+                                text = "No Voicemails",
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.SemiBold,
+                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
                             )
-                        }
-                        Spacer(modifier = Modifier.height(24.dp))
-                        Text(
-                            text = "No Voicemails",
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.SemiBold,
-                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
-                        )
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Text(
-                            text = "Your voicemails will appear here",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
-                        )
-                        Spacer(modifier = Modifier.height(24.dp))
-                        OutlinedButton(
-                            onClick = { viewModel.refresh() },
-                            shape = RoundedCornerShape(24.dp)
-                        ) {
-                            Icon(Icons.Default.Refresh, contentDescription = null, modifier = Modifier.size(18.dp))
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text("Refresh")
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Text(
+                                text = "Your voicemails will appear here",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
+                            )
+                            Spacer(modifier = Modifier.height(24.dp))
+                            OutlinedButton(
+                                onClick = { viewModel.refresh() },
+                                shape = RoundedCornerShape(24.dp)
+                            ) {
+                                Icon(Icons.Default.Refresh, contentDescription = null, modifier = Modifier.size(18.dp))
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text("Refresh")
+                            }
                         }
                     }
-                }
-            } else {
-                LazyColumn(
-                    modifier = Modifier.fillMaxSize(),
-                    contentPadding = PaddingValues(vertical = 8.dp)
-                ) {
-                    items(voicemails, key = { it.id }) { voicemail ->
-                        ModernVoicemailItem(
-                            voicemail = voicemail,
-                            isPlaying = playingVoicemailId == voicemail.id,
-                            isLoading = playingVoicemailId == voicemail.id && isAudioLoading,
-                            progress = if (playingVoicemailId == voicemail.id) playbackProgress else 0f,
-                            currentPosition = if (playingVoicemailId == voicemail.id) currentPositionMs else 0L,
-                            duration = if (playingVoicemailId == voicemail.id && durationMs > 0) durationMs else (voicemail.duration * 1000L),
-                            speed = if (playingVoicemailId == voicemail.id) playbackSpeed else 1.0f,
-                            onPlayPause = { viewModel.togglePlayback(voicemail.id) },
-                            onSeek = { viewModel.seekTo(it) },
-                            onSpeedChange = { viewModel.cyclePlaybackSpeed() },
-                            onCallBack = { onCallBack(voicemail.callerNumber) }
-                        )
+                } else {
+                    LazyColumn(
+                        modifier = Modifier.weight(1f),
+                        contentPadding = PaddingValues(vertical = 8.dp)
+                    ) {
+                        items(filteredVoicemails, key = { it.id }) { voicemail ->
+                            ModernVoicemailItem(
+                                voicemail = voicemail,
+                                isPlaying = playingVoicemailId == voicemail.id,
+                                isLoading = playingVoicemailId == voicemail.id && isAudioLoading,
+                                progress = if (playingVoicemailId == voicemail.id) playbackProgress else 0f,
+                                currentPosition = if (playingVoicemailId == voicemail.id) currentPositionMs else 0L,
+                                duration = if (playingVoicemailId == voicemail.id && durationMs > 0) durationMs else (voicemail.duration * 1000L),
+                                speed = if (playingVoicemailId == voicemail.id) playbackSpeed else 1.0f,
+                                visuallyReadVoicemails = visuallyReadVoicemails,
+                                onPlayPause = { viewModel.togglePlayback(voicemail.id) },
+                                onSeek = { viewModel.seekTo(it) },
+                                onSpeedChange = { viewModel.cyclePlaybackSpeed() },
+                                onCallBack = { onCallBack(voicemail.callerNumber) }
+                            )
+                        }
                     }
                 }
             }
+        }
+    }
+}
+
+@Composable
+private fun FilterTabs(
+    selectedFilter: VoicemailViewModel.FilterType,
+    onFilterSelected: (VoicemailViewModel.FilterType) -> Unit
+) {
+    TabRow(
+        selectedTabIndex = selectedFilter.ordinal,
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        VoicemailViewModel.FilterType.values().forEach { filter ->
+            Tab(
+                selected = selectedFilter == filter,
+                onClick = { onFilterSelected(filter) },
+                text = {
+                    Text(
+                        text = when (filter) {
+                            VoicemailViewModel.FilterType.ALL -> "All"
+                            VoicemailViewModel.FilterType.READ -> "Read"
+                            VoicemailViewModel.FilterType.UNREAD -> "Unread"
+                        },
+                        fontSize = 13.sp
+                    )
+                }
+            )
         }
     }
 }
@@ -171,6 +227,7 @@ private fun ModernVoicemailItem(
     currentPosition: Long,
     duration: Long,
     speed: Float,
+    visuallyReadVoicemails: Set<String>,
     onPlayPause: () -> Unit,
     onSeek: (Float) -> Unit,
     onSpeedChange: () -> Unit,
@@ -179,15 +236,32 @@ private fun ModernVoicemailItem(
     val displayName = voicemail.callerName ?: PhoneNumberUtils.formatForDisplay(voicemail.callerNumber)
     val initials = getInitials(voicemail.callerName, voicemail.callerNumber)
 
-    // Animated background for unread
+    // Visual read state: actually read OR currently playing OR in visually read set (stays read until screen leaves)
+    val isVisuallyRead = voicemail.isRead || isPlaying || (voicemail.id in visuallyReadVoicemails)
+
+    // Better color scheme for read/unread - unread is prominent, read is subtle grey
     val cardColor by animateColorAsState(
-        targetValue = if (!voicemail.isRead)
-            MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f)
+        targetValue = if (!isVisuallyRead)
+            MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.25f) // More prominent for unread
         else
             MaterialTheme.colorScheme.surface,
         animationSpec = tween(300),
         label = "cardColor"
     )
+
+    // Text colors - unread is bold and dark, read is grey
+    val nameColor = if (!isVisuallyRead) {
+        MaterialTheme.colorScheme.onSurface
+    } else {
+        MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+    }
+
+    // Left border accent color for unread items - simple and prominent
+    val borderColor = if (!isVisuallyRead) {
+        BitNexGreen  // Prominent green color
+    } else {
+        Color.Transparent
+    }
 
     Card(
         modifier = Modifier
@@ -195,22 +269,36 @@ private fun ModernVoicemailItem(
             .padding(horizontal = 12.dp, vertical = 6.dp),
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = cardColor),
-        elevation = CardDefaults.cardElevation(defaultElevation = if (!voicemail.isRead) 2.dp else 0.dp)
+        elevation = CardDefaults.cardElevation(defaultElevation = if (!isVisuallyRead) 3.dp else 1.dp)
     ) {
-        Column(
-            modifier = Modifier.padding(12.dp)
+        Box(
+            modifier = Modifier.fillMaxWidth()
         ) {
-            // Header row with avatar, name, time
-            Row(
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                // Avatar
+            // Left border accent for unread items
+            if (!isVisuallyRead) {
                 Box(
                     modifier = Modifier
-                        .size(44.dp)
+                        .width(2.dp)  // Slim border
+                        .fillMaxHeight()
+                        .background(borderColor)
+                        .align(Alignment.CenterStart)
+                )
+            }
+            Column(
+                modifier = Modifier.padding(12.dp)
+            ) {
+            // Header row with avatar, name, time
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                // Avatar - Fixed overflow with proper clipping, more prominent for unread
+                Box(
+                    modifier = Modifier
+                        .size(if (!isVisuallyRead) 48.dp else 44.dp)
                         .clip(CircleShape)
                         .background(
-                            if (!voicemail.isRead)
+                            if (!isVisuallyRead)
                                 MaterialTheme.colorScheme.primary
                             else
                                 MaterialTheme.colorScheme.surfaceVariant
@@ -221,31 +309,42 @@ private fun ModernVoicemailItem(
                         text = initials,
                         style = MaterialTheme.typography.titleSmall,
                         fontWeight = FontWeight.Bold,
-                        color = if (!voicemail.isRead)
+                        color = if (!isVisuallyRead)
                             MaterialTheme.colorScheme.onPrimary
                         else
-                            MaterialTheme.colorScheme.onSurfaceVariant
+                            MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 1,
+                        overflow = TextOverflow.Clip
                     )
                 }
 
                 Spacer(modifier = Modifier.width(12.dp))
 
-                // Name and time
-                Column(modifier = Modifier.weight(1f)) {
+                // Name and time - Fixed overflow
+                Column(
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxWidth()
+                ) {
                     Text(
                         text = displayName,
                         style = MaterialTheme.typography.bodyLarge,
-                        fontWeight = if (!voicemail.isRead) FontWeight.Bold else FontWeight.Medium,
+                        fontWeight = if (!isVisuallyRead) FontWeight.Bold else FontWeight.Medium,
+                        color = nameColor,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )
                     Row(
-                        verticalAlignment = Alignment.CenterVertically
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.fillMaxWidth()
                     ) {
                         Text(
                             text = DateTimeUtils.formatRelativeTime(voicemail.receivedAt),
                             style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                            color = if (!isVisuallyRead)
+                                MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                            else
+                                MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
                         )
                         Text(
                             text = " · ",
@@ -254,13 +353,16 @@ private fun ModernVoicemailItem(
                         Text(
                             text = formatDuration(voicemail.duration),
                             style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                            color = if (!isVisuallyRead)
+                                MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                            else
+                                MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
                         )
-                        if (!voicemail.isRead) {
+                        if (!isVisuallyRead) {
                             Spacer(modifier = Modifier.width(8.dp))
                             Box(
                                 modifier = Modifier
-                                    .size(8.dp)
+                                    .size(10.dp)
                                     .clip(CircleShape)
                                     .background(MaterialTheme.colorScheme.primary)
                             )
@@ -488,6 +590,7 @@ private fun ModernVoicemailItem(
                     Spacer(modifier = Modifier.width(6.dp))
                     Text("Call Back", fontSize = 13.sp)
                 }
+            }
             }
         }
     }

@@ -81,6 +81,10 @@ class VoicemailViewModel @Inject constructor(
     private val _playbackSpeed = MutableStateFlow(1.0f)
     val playbackSpeed: StateFlow<Float> = _playbackSpeed.asStateFlow()
 
+    // Track voicemails that are visually read (playing) but not yet marked in database
+    private val _visuallyReadVoicemails = MutableStateFlow<Set<String>>(emptySet())
+    val visuallyReadVoicemails: StateFlow<Set<String>> = _visuallyReadVoicemails.asStateFlow()
+
     // ExoPlayer for fast audio streaming
     private var exoPlayer: ExoPlayer? = null
     private var progressUpdateJob: kotlinx.coroutines.Job? = null
@@ -159,9 +163,38 @@ class VoicemailViewModel @Inject constructor(
             initialValue = 0
         )
 
+    // Filter state: All, Read, Unread
+    enum class FilterType {
+        ALL, READ, UNREAD
+    }
+
+    private val _selectedFilter = MutableStateFlow(FilterType.ALL)
+    val selectedFilter: StateFlow<FilterType> = _selectedFilter.asStateFlow()
+
+    // Filtered voicemails based on selected filter
+    val filteredVoicemails: StateFlow<List<Voicemail>> = combine(
+        voicemails,
+        selectedFilter
+    ) { allVoicemails, filter ->
+        when (filter) {
+            FilterType.ALL -> allVoicemails
+            FilterType.READ -> allVoicemails.filter { it.isRead }
+            FilterType.UNREAD -> allVoicemails.filter { !it.isRead }
+        }
+    }.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5000),
+        initialValue = emptyList()
+    )
+
+    fun setFilter(filter: FilterType) {
+        _selectedFilter.value = filter
+    }
+
     init {
         loadInitialData()
         observeSocketEvents()
+        observeMailboxAvailability()
 
         // Mark initial load complete when data arrives
         viewModelScope.launch {
@@ -172,6 +205,36 @@ class VoicemailViewModel @Inject constructor(
                     Log.d(TAG, "Initial voicemails loaded: ${voicemailList.size}")
                 } else if (hasInitiallyLoaded) {
                     _isLoading.value = false
+                }
+            }
+        }
+    }
+
+    /**
+     * Observe mailbox availability - triggers load when mailbox becomes available after login
+     * This ensures badge shows immediately after login
+     */
+    private fun observeMailboxAvailability() {
+        viewModelScope.launch {
+            // Check periodically if mailbox becomes available (after login)
+            var lastMailbox = getMailbox()
+            while (true) {
+                kotlinx.coroutines.delay(1000) // Check every second
+                val currentMailbox = getMailbox()
+                
+                // If mailbox just became available and we haven't loaded yet
+                if (currentMailbox.isNotEmpty() && currentMailbox != lastMailbox && !hasInitiallyLoaded) {
+                    Log.d(TAG, "Mailbox became available after login, triggering loadInitialData")
+                    loadInitialData()
+                    lastMailbox = currentMailbox
+                    // Stop checking after mailbox is available and loaded
+                    break
+                }
+                lastMailbox = currentMailbox
+                
+                // Stop checking after 30 seconds to avoid infinite loop
+                if (hasInitiallyLoaded) {
+                    break
                 }
             }
         }
@@ -463,23 +526,9 @@ class VoicemailViewModel @Inject constructor(
                     }
             }
 
-            // Mark as read in background
-            viewModelScope.launch {
-                val mailbox = getMailbox()
-                voicemailDao.markAsRead(voicemailId)
-                if (mailbox.isNotEmpty()) {
-                    try {
-                        apiService.markVoicemailAsRead(
-                            MarkVoicemailReadRequest(
-                                mailbox = mailbox,
-                                messageId = voicemailId
-                            )
-                        )
-                        Log.d(TAG, "playVoicemail: Marked voicemail $voicemailId as read on server")
-                    } catch (e: Exception) {
-                        Log.e(TAG, "playVoicemail: Failed to mark voicemail as read on server", e)
-                    }
-                }
+            // Mark as visually read (UI will show as read, but stays in unread tab until screen leaves)
+            if (!voicemail.isRead) {
+                _visuallyReadVoicemails.value = _visuallyReadVoicemails.value + voicemailId
             }
         } catch (e: Exception) {
             Log.e(TAG, "playVoicemail: Error playing voicemail", e)
@@ -576,6 +625,41 @@ class VoicemailViewModel @Inject constructor(
         _currentPositionMs.value = 0L
         _durationMs.value = 0L
         _playbackSpeed.value = 1.0f  // Reset speed when stopping
+    }
+
+    /**
+     * Mark visually read voicemails as actually read in database
+     * Called when user leaves voicemail screen or switches to read filter
+     * This ensures voicemails move from unread to read list and badge updates immediately
+     */
+    fun markVisuallyReadAsRead() {
+        viewModelScope.launch {
+            val toMarkAsRead = _visuallyReadVoicemails.value.toSet() // Create a copy
+            if (toMarkAsRead.isNotEmpty()) {
+                Log.d(TAG, "markVisuallyReadAsRead: Marking ${toMarkAsRead.size} voicemails as read")
+                val mailbox = getMailbox()
+                toMarkAsRead.forEach { voicemailId ->
+                    // Mark as read in database - this will trigger Flow updates
+                    voicemailDao.markAsRead(voicemailId)
+                    if (mailbox.isNotEmpty()) {
+                        try {
+                            apiService.markVoicemailAsRead(
+                                MarkVoicemailReadRequest(
+                                    mailbox = mailbox,
+                                    messageId = voicemailId
+                                )
+                            )
+                            Log.d(TAG, "markVisuallyReadAsRead: Marked voicemail $voicemailId as read on server")
+                        } catch (e: Exception) {
+                            Log.e(TAG, "markVisuallyReadAsRead: Failed to mark voicemail as read on server", e)
+                        }
+                    }
+                }
+                // Clear the set after marking - this ensures UI updates immediately
+                _visuallyReadVoicemails.value = emptySet()
+                Log.d(TAG, "markVisuallyReadAsRead: Completed. Badge and filtered list will update automatically")
+            }
+        }
     }
 
     fun deleteVoicemail(voicemailId: String) {

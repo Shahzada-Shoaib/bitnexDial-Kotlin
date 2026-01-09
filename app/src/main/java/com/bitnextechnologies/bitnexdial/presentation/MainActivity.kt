@@ -137,6 +137,7 @@ class MainActivity : FragmentActivity() {
                         // Collect badge counts for WhatsApp-style navigation badges
                         val missedCallCount by viewModel.missedCallCount.collectAsState()
                         val unreadMessageCount by viewModel.unreadMessageCount.collectAsState()
+                        val unreadVoicemailCount by viewModel.unreadVoicemailCount.collectAsState()
 
                         // Observe conversation navigation events
                         LaunchedEffect(Unit) {
@@ -155,6 +156,7 @@ class MainActivity : FragmentActivity() {
                             isLoggedIn = isLoggedIn,
                             missedCallCount = missedCallCount,
                             unreadMessageCount = unreadMessageCount,
+                            unreadVoicemailCount = unreadVoicemailCount,
                             onMakeCall = { phoneNumber, contactName ->
                                 viewModel.makeCall(phoneNumber, contactName)
                             },
