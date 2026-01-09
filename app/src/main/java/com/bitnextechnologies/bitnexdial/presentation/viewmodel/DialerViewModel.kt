@@ -1,6 +1,8 @@
 package com.bitnextechnologies.bitnexdial.presentation.viewmodel
 
 import android.content.Context
+import android.media.AudioManager
+import android.media.ToneGenerator
 import androidx.lifecycle.ViewModel
 import com.bitnextechnologies.bitnexdial.domain.repository.ISipRepository
 import com.bitnextechnologies.bitnexdial.domain.repository.SipRegistrationState
@@ -36,6 +38,26 @@ class DialerViewModel @Inject constructor(
     // Last dialed number for redial feature
     private val _lastDialedNumber = MutableStateFlow("")
     val lastDialedNumber: StateFlow<String> = _lastDialedNumber.asStateFlow()
+
+    // DTMF tone generator for dialpad feedback
+    private var dtmfToneGenerator: ToneGenerator? = null
+    private val audioManager = context.getSystemService(Context.AUDIO_SERVICE) as AudioManager
+
+    // DTMF tone mapping
+    private val dtmfToneMap = mapOf(
+        "0" to ToneGenerator.TONE_DTMF_0,
+        "1" to ToneGenerator.TONE_DTMF_1,
+        "2" to ToneGenerator.TONE_DTMF_2,
+        "3" to ToneGenerator.TONE_DTMF_3,
+        "4" to ToneGenerator.TONE_DTMF_4,
+        "5" to ToneGenerator.TONE_DTMF_5,
+        "6" to ToneGenerator.TONE_DTMF_6,
+        "7" to ToneGenerator.TONE_DTMF_7,
+        "8" to ToneGenerator.TONE_DTMF_8,
+        "9" to ToneGenerator.TONE_DTMF_9,
+        "*" to ToneGenerator.TONE_DTMF_S,
+        "#" to ToneGenerator.TONE_DTMF_P
+    )
 
     init {
         // Load last dialed number from SharedPreferences
@@ -86,6 +108,8 @@ class DialerViewModel @Inject constructor(
     fun appendDigit(digit: String) {
         if (_phoneNumber.value.length < 20) {
             _phoneNumber.value += digit
+            // Play DTMF tone for audio feedback
+            playDtmfTone(digit)
         }
     }
 
@@ -188,5 +212,31 @@ class DialerViewModel @Inject constructor(
      */
     fun removeSpeedDial(digit: String) {
         speedDialManager.removeSpeedDial(digit)
+    }
+
+    /**
+     * Play DTMF tone for dialpad feedback
+     */
+    private fun playDtmfTone(digit: String) {
+        try {
+            val toneType = dtmfToneMap[digit] ?: return
+
+            // Create ToneGenerator if needed
+            if (dtmfToneGenerator == null) {
+                dtmfToneGenerator = ToneGenerator(AudioManager.STREAM_DTMF, 80)
+            }
+
+            // Play the DTMF tone for 150ms
+            dtmfToneGenerator?.startTone(toneType, 150)
+        } catch (e: Exception) {
+            // Non-critical - DTMF tone is just for feedback
+        }
+    }
+
+    override fun onCleared() {
+        super.onCleared()
+        // Cleanup DTMF tone generator
+        dtmfToneGenerator?.release()
+        dtmfToneGenerator = null
     }
 }
