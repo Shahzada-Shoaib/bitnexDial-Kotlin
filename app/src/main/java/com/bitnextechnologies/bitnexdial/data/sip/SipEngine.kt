@@ -622,4 +622,17 @@ class SipEngine @Inject constructor(
             callIdToLine.remove(callId)
         }
     }
+
+    /**
+     * Cleanup line mapping - called from SipCallManager when call ends
+     */
+    fun cleanupCallMapping(callId: String) {
+        val lineNumber = callIdToLine[callId]
+        if (lineNumber != null) {
+            Log.d(TAG, "Cleaning up mapping: callId=$callId, lineNumber=$lineNumber")
+            lineToCallId.remove(lineNumber)
+            callIdToLine.remove(callId)
+            Log.d(TAG, "✅ Mapping cleaned up")
+        }
+    }
 }

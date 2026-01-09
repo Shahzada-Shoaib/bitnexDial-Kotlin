@@ -1440,8 +1440,8 @@ class WebViewSipBridge @Inject constructor(
         fun onCallStarted(lineNumber: String, phoneNumber: String) {
             Log.d(TAG, "Call started on line $lineNumber to $phoneNumber")
             _activeCallId.value = lineNumber
-            _callState.value = "ringing"
-            onCallStateChanged?.invoke(lineNumber, "ringing")
+            _callState.value = "connecting"
+            onCallStateChanged?.invoke(lineNumber, "connecting")
         }
 
         @JavascriptInterface

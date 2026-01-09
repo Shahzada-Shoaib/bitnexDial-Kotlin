@@ -493,6 +493,27 @@ class SipCallManager @Inject constructor(
     private fun handleCallStateChange(callId: String, state: SipCallState) {
         Log.d(TAG, "Call state changed: $callId -> $state")
 
+        // ✅ FIRST CHECK: If call is not active, ignore all state updates (stale events)
+        if (!_activeCalls.value.containsKey(callId)) {
+            Log.w(TAG, "⚠️ Ignoring state update for inactive call: $callId -> $state")
+            return
+        }
+
+        val currentState = callStates[callId]
+        
+        // Ignore CONNECTING if already in RINGING or higher state
+        if (state == SipCallState.CONNECTING && 
+            currentState in listOf(SipCallState.RINGING, SipCallState.EARLY_MEDIA, SipCallState.CONNECTED)) {
+            Log.w(TAG, "⚠️ Ignoring CONNECTING state - already in $currentState")
+            return
+        }
+        
+        // Ignore RINGING if already CONNECTED
+        if (state == SipCallState.RINGING && currentState == SipCallState.CONNECTED) {
+            Log.w(TAG, "⚠️ Ignoring RINGING state - already CONNECTED")
+            return
+        }
+
         callStates[callId] = state
         _currentCallState.value = state  // Update the flow for UI observers
         notifyCallStateListener(callId, state)
@@ -629,6 +650,9 @@ class SipCallManager @Inject constructor(
         _activeCalls.value = _activeCalls.value - callId
         callStates.remove(callId)
         callStateListeners.remove(callId)
+
+        // Cleanup line mappings in SipEngine
+        sipEngine.cleanupCallMapping(callId)
 
         // Clear waiting call if it was this call
         if (_waitingCall.value?.id == callId) {
