@@ -1,0 +1,267 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <!-- ==================== CORE PERMISSIONS ==================== -->
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
+    <uses-permission android:name="android.permission.CHANGE_WIFI_STATE" />
+    <uses-permission android:name="android.permission.CHANGE_NETWORK_STATE" />
+
+    <!-- ==================== VOIP PERMISSIONS ==================== -->
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
+    <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
+    <uses-permission android:name="android.permission.READ_PHONE_STATE" />
+    <uses-permission android:name="android.permission.READ_PHONE_NUMBERS" />
+    <uses-permission android:name="android.permission.CALL_PHONE" />
+    <uses-permission android:name="android.permission.ANSWER_PHONE_CALLS" />
+    <uses-permission android:name="android.permission.MANAGE_OWN_CALLS" />
+    <uses-permission android:name="android.permission.READ_CALL_LOG" />
+    <uses-permission android:name="android.permission.WRITE_CALL_LOG" />
+    <uses-permission android:name="android.permission.PROCESS_OUTGOING_CALLS" />
+
+    <!-- ==================== TELECOM FRAMEWORK ==================== -->
+    <uses-permission android:name="android.permission.BIND_TELECOM_CONNECTION_SERVICE"
+        tools:ignore="ProtectedPermissions" />
+
+    <!-- ==================== BACKGROUND OPERATION ==================== -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_PHONE_CALL" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MICROPHONE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+    <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
+    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
+    <uses-permission android:name="android.permission.USE_EXACT_ALARM" />
+
+    <!-- ==================== NOTIFICATIONS ==================== -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.VIBRATE" />
+    <uses-permission android:name="android.permission.USE_FULL_SCREEN_INTENT" />
+
+    <!-- ==================== CONTACTS & STORAGE ==================== -->
+    <uses-permission android:name="android.permission.READ_CONTACTS" />
+    <uses-permission android:name="android.permission.WRITE_CONTACTS" />
+    <uses-permission android:name="android.permission.GET_ACCOUNTS" />
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"
+        android:maxSdkVersion="32" />
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"
+        android:maxSdkVersion="32"
+        tools:ignore="ScopedStorage" />
+    <uses-permission android:name="android.permission.READ_MEDIA_AUDIO" />
+    <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
+
+    <!-- ==================== FEATURES ==================== -->
+    <uses-feature android:name="android.hardware.telephony" android:required="false" />
+    <uses-feature android:name="android.hardware.microphone" android:required="true" />
+    <uses-feature android:name="android.hardware.audio.output" android:required="true" />
+    <uses-feature android:name="android.hardware.wifi" android:required="false" />
+
+    <!-- ==================== XOS LAUNCHER BADGE PERMISSIONS ==================== -->
+    <!-- For Infinix/Tecno/Itel devices with XOS Launcher -->
+    <uses-permission android:name="com.transsion.XOSLauncher.permission.WRITE_SETTINGS" />
+    <uses-permission android:name="com.transsion.XOSLauncher.permission.READ_SETTINGS" />
+
+    <!-- ==================== PACKAGE QUERIES FOR BADGE SUPPORT ==================== -->
+    <!-- Required for Android 11+ to interact with launcher packages for app icon badges -->
+    <queries>
+        <!-- XOS Launcher (Infinix/Tecno/Itel) -->
+        <package android:name="com.transsion.XOSLauncher" />
+        <package android:name="com.transsion.hilauncher" />
+
+        <!-- Samsung -->
+        <package android:name="com.sec.android.app.launcher" />
+
+        <!-- Huawei/Honor -->
+        <package android:name="com.huawei.android.launcher" />
+
+        <!-- Xiaomi/MIUI -->
+        <package android:name="com.miui.home" />
+
+        <!-- OPPO/ColorOS -->
+        <package android:name="com.oppo.launcher" />
+
+        <!-- Vivo -->
+        <package android:name="com.vivo.launcher" />
+
+        <!-- Stock Android -->
+        <package android:name="com.android.launcher3" />
+        <package android:name="com.google.android.apps.nexuslauncher" />
+
+        <!-- Intent for badge actions -->
+        <intent>
+            <action android:name="android.intent.action.BADGE_COUNT_UPDATE" />
+        </intent>
+        <intent>
+            <action android:name="com.android.launcher.action.UPDATE_BADGE" />
+        </intent>
+    </queries>
+
+    <application
+        android:name=".BitNexDialApplication"
+        android:allowBackup="true"
+        android:dataExtractionRules="@xml/data_extraction_rules"
+        android:fullBackupContent="@xml/backup_rules"
+        android:icon="@mipmap/ic_launcher"
+        android:label="@string/app_name"
+        android:roundIcon="@mipmap/ic_launcher_round"
+        android:supportsRtl="true"
+        android:theme="@style/Theme.BitNexDial"
+        android:networkSecurityConfig="@xml/network_security_config"
+        android:usesCleartextTraffic="false"
+        android:enableOnBackInvokedCallback="true"
+        tools:targetApi="34">
+
+        <!-- ==================== MAIN ACTIVITY (Compose Navigation) ==================== -->
+        <activity
+            android:name=".presentation.MainActivity"
+            android:exported="true"
+            android:launchMode="singleTask"
+            android:screenOrientation="portrait"
+            android:windowSoftInputMode="adjustResize"
+            android:theme="@style/Theme.BitNexDial">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <action android:name="android.intent.action.DIAL" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="tel" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="sip" />
+            </intent-filter>
+        </activity>
+
+        <!-- ==================== INCOMING CALL (FULL SCREEN) ==================== -->
+        <activity
+            android:name=".presentation.call.IncomingCallActivity"
+            android:exported="false"
+            android:launchMode="singleInstance"
+            android:excludeFromRecents="true"
+            android:showOnLockScreen="true"
+            android:showWhenLocked="true"
+            android:turnScreenOn="true"
+            android:screenOrientation="portrait"
+            android:taskAffinity=""
+            android:theme="@style/Theme.BitNexDial.IncomingCall" />
+
+        <!-- ==================== IN-CALL ACTIVITY ==================== -->
+        <activity
+            android:name=".presentation.call.InCallActivity"
+            android:exported="false"
+            android:launchMode="singleTask"
+            android:screenOrientation="portrait"
+            android:showWhenLocked="true"
+            android:turnScreenOn="true"
+            android:theme="@style/Theme.BitNexDial.InCall" />
+
+        <!-- ==================== CONNECTION SERVICE (TELECOM) ==================== -->
+        <service
+            android:name=".service.telecom.CallConnectionService"
+            android:exported="true"
+            android:permission="android.permission.BIND_TELECOM_CONNECTION_SERVICE">
+            <intent-filter>
+                <action android:name="android.telecom.ConnectionService" />
+            </intent-filter>
+        </service>
+
+        <!-- ==================== SIP FOREGROUND SERVICE ==================== -->
+        <service
+            android:name=".service.SipForegroundService"
+            android:exported="false"
+            android:stopWithTask="false"
+            android:foregroundServiceType="phoneCall|microphone|dataSync" />
+
+        <!-- ==================== CALL RECORDING SERVICE ==================== -->
+        <service
+            android:name=".service.CallRecordingService"
+            android:exported="false"
+            android:foregroundServiceType="microphone" />
+
+        <!-- ==================== FCM PUSH SERVICE ==================== -->
+        <service
+            android:name=".service.fcm.PushCallService"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.google.firebase.MESSAGING_EVENT" />
+            </intent-filter>
+        </service>
+
+        <!-- ==================== BOOT RECEIVER ==================== -->
+        <receiver
+            android:name=".receiver.BootReceiver"
+            android:exported="true"
+            android:enabled="true"
+            android:directBootAware="true">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+                <action android:name="android.intent.action.QUICKBOOT_POWERON" />
+                <action android:name="android.intent.action.LOCKED_BOOT_COMPLETED" />
+            </intent-filter>
+            <!-- Restart service after app update -->
+            <intent-filter>
+                <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
+            </intent-filter>
+        </receiver>
+
+        <!-- ==================== CALL ACTION RECEIVER ==================== -->
+        <receiver
+            android:name=".receiver.CallActionReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.bitnextechnologies.bitnexdial.ACTION_ANSWER_CALL" />
+                <action android:name="com.bitnextechnologies.bitnexdial.ACTION_DECLINE_CALL" />
+                <action android:name="com.bitnextechnologies.bitnexdial.ACTION_END_CALL" />
+                <action android:name="com.bitnextechnologies.bitnexdial.ACTION_MUTE_CALL" />
+            </intent-filter>
+        </receiver>
+
+        <!-- ==================== SERVICE RESTART RECEIVER ==================== -->
+        <!-- Handles AlarmManager-based keepalive and service restart -->
+        <receiver
+            android:name=".receiver.ServiceRestartReceiver"
+            android:exported="false"
+            android:enabled="true">
+            <intent-filter>
+                <action android:name="com.bitnextechnologies.bitnexdial.RESTART_SERVICE" />
+                <action android:name="com.bitnextechnologies.bitnexdial.KEEPALIVE" />
+            </intent-filter>
+        </receiver>
+
+        <!-- ==================== FIREBASE META DATA ==================== -->
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_channel_id"
+            android:value="incoming_calls" />
+
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_icon"
+            android:resource="@drawable/ic_notification" />
+
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_color"
+            android:resource="@color/primary" />
+
+        <!-- ==================== WORK MANAGER INITIALIZER ==================== -->
+        <provider
+            android:name="androidx.startup.InitializationProvider"
+            android:authorities="${applicationId}.androidx-startup"
+            android:exported="false"
+            tools:node="merge">
+            <meta-data
+                android:name="androidx.work.WorkManagerInitializer"
+                android:value="androidx.startup"
+                tools:node="remove" />
+        </provider>
+
+    </application>
+
+</manifest>

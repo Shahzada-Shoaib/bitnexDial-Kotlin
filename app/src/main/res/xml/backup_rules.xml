@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<full-backup-content>
+    <!-- Include user preferences and settings -->
+    <include domain="sharedpref" path="." />
+
+    <!-- Include database -->
+    <include domain="database" path="." />
+
+    <!-- Exclude sensitive data from sharedprefs -->
+    <exclude domain="sharedpref" path="secure_prefs.xml" />
+
+    <!-- Exclude call recordings database -->
+    <exclude domain="database" path="call_recordings.db" />
+</full-backup-content>

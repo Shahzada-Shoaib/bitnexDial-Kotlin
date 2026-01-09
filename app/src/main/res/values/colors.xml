@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Brand Colors -->
+    <color name="primary">#2196F3</color>
+    <color name="primary_dark">#1976D2</color>
+    <color name="primary_light">#BBDEFB</color>
+    <color name="primary_variant">#1565C0</color>
+
+    <color name="secondary">#03DAC6</color>
+    <color name="secondary_dark">#00BFA5</color>
+    <color name="secondary_variant">#018786</color>
+
+    <color name="accent">#FF4081</color>
+
+    <!-- Background Colors -->
+    <color name="background">#FFFFFF</color>
+    <color name="background_dark">#121212</color>
+    <color name="surface">#FFFFFF</color>
+    <color name="surface_dark">#1E1E1E</color>
+    <color name="card_background">#F5F5F5</color>
+    <color name="card_background_dark">#2C2C2C</color>
+
+    <!-- Text Colors -->
+    <color name="text_primary">#212121</color>
+    <color name="text_primary_dark">#FFFFFF</color>
+    <color name="text_secondary">#757575</color>
+    <color name="text_secondary_dark">#B0B0B0</color>
+    <color name="text_hint">#9E9E9E</color>
+    <color name="text_disabled">#BDBDBD</color>
+    <color name="text_on_primary">#FFFFFF</color>
+    <color name="text_on_secondary">#000000</color>
+
+    <!-- Status Colors -->
+    <color name="success">#4CAF50</color>
+    <color name="success_dark">#388E3C</color>
+    <color name="error">#F44336</color>
+    <color name="error_dark">#D32F2F</color>
+    <color name="warning">#FF9800</color>
+    <color name="warning_dark">#F57C00</color>
+    <color name="info">#2196F3</color>
+
+    <!-- Call Colors -->
+    <color name="call_answer">#4CAF50</color>
+    <color name="call_decline">#F44336</color>
+    <color name="call_end">#F44336</color>
+    <color name="call_hold">#FF9800</color>
+    <color name="call_mute">#607D8B</color>
+    <color name="call_background">#1A1A2E</color>
+    <color name="call_background_gradient_start">#16213E</color>
+    <color name="call_background_gradient_end">#0F3460</color>
+    <color name="incoming_call_background">#1A1A2E</color>
+
+    <!-- Keypad Colors -->
+    <color name="keypad_button">#F5F5F5</color>
+    <color name="keypad_button_pressed">#E0E0E0</color>
+    <color name="keypad_text">#212121</color>
+    <color name="keypad_subtext">#757575</color>
+
+    <!-- Divider & Border -->
+    <color name="divider">#E0E0E0</color>
+    <color name="divider_dark">#424242</color>
+    <color name="border">#BDBDBD</color>
+
+    <!-- Message Colors -->
+    <color name="message_outgoing">#DCF8C6</color>
+    <color name="message_incoming">#FFFFFF</color>
+    <color name="message_outgoing_dark">#056162</color>
+    <color name="message_incoming_dark">#262D31</color>
+
+    <!-- Badge Colors -->
+    <color name="badge_background">#F44336</color>
+    <color name="badge_text">#FFFFFF</color>
+
+    <!-- Registration Status -->
+    <color name="status_registered">#4CAF50</color>
+    <color name="status_registering">#FF9800</color>
+    <color name="status_unregistered">#F44336</color>
+    <color name="status_offline">#9E9E9E</color>
+
+    <!-- Ripple -->
+    <color name="ripple_light">#20000000</color>
+    <color name="ripple_dark">#20FFFFFF</color>
+
+    <!-- Transparent -->
+    <color name="transparent">#00000000</color>
+    <color name="semi_transparent_black">#80000000</color>
+    <color name="semi_transparent_white">#80FFFFFF</color>
+</resources>

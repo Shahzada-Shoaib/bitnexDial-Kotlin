@@ -1,0 +1,151 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- App Name -->
+    <string name="app_name">BitNexDial</string>
+    <string name="app_name_full">BitNex Dial - VoIP Phone</string>
+
+    <!-- Navigation -->
+    <string name="nav_dialer">Keypad</string>
+    <string name="nav_calls">Calls</string>
+    <string name="nav_contacts">Contacts</string>
+    <string name="nav_messages">Messages</string>
+    <string name="nav_voicemail">Voicemail</string>
+    <string name="nav_settings">Settings</string>
+
+    <!-- Dialer -->
+    <string name="dialer_title">Dialer</string>
+    <string name="dialer_hint">Enter number</string>
+    <string name="dialer_call">Call</string>
+    <string name="dialer_delete">Delete</string>
+    <string name="dialer_add_contact">Add to contacts</string>
+
+    <!-- Call Screen -->
+    <string name="call_incoming">Incoming Call</string>
+    <string name="call_outgoing">Calling…</string>
+    <string name="call_connecting">Connecting…</string>
+    <string name="call_connected">Connected</string>
+    <string name="call_ended">Call Ended</string>
+    <string name="call_on_hold">On Hold</string>
+    <string name="call_muted">Muted</string>
+    <string name="call_answer">Answer</string>
+    <string name="call_decline">Decline</string>
+    <string name="call_end">End Call</string>
+    <string name="call_mute">Mute</string>
+    <string name="call_unmute">Unmute</string>
+    <string name="call_hold">Hold</string>
+    <string name="call_resume">Resume</string>
+    <string name="call_speaker">Speaker</string>
+    <string name="call_keypad">Keypad</string>
+    <string name="call_transfer">Transfer</string>
+    <string name="call_add">Add Call</string>
+    <string name="call_merge">Merge</string>
+    <string name="call_swap">Swap</string>
+
+    <!-- Contacts -->
+    <string name="contacts_title">Contacts</string>
+    <string name="contacts_search">Search contacts</string>
+    <string name="contacts_add">Add Contact</string>
+    <string name="contacts_edit">Edit Contact</string>
+    <string name="contacts_delete">Delete Contact</string>
+    <string name="contacts_empty">No contacts found</string>
+    <string name="contacts_favorites">Favorites</string>
+    <string name="contacts_all">All Contacts</string>
+
+    <!-- Messages -->
+    <string name="messages_title">Messages</string>
+    <string name="messages_new">New Message</string>
+    <string name="messages_hint">Type a message…</string>
+    <string name="messages_send">Send</string>
+    <string name="messages_empty">No messages yet</string>
+    <string name="messages_delivered">Delivered</string>
+    <string name="messages_sent">Sent</string>
+    <string name="messages_failed">Failed</string>
+
+    <!-- Call History -->
+    <string name="history_title">Recent Calls</string>
+    <string name="history_all">All</string>
+    <string name="history_missed">Missed</string>
+    <string name="history_incoming">Incoming</string>
+    <string name="history_outgoing">Outgoing</string>
+    <string name="history_empty">No recent calls</string>
+
+    <!-- Voicemail -->
+    <string name="voicemail_title">Voicemail</string>
+    <string name="voicemail_empty">No voicemails</string>
+    <string name="voicemail_play">Play</string>
+    <string name="voicemail_pause">Pause</string>
+    <string name="voicemail_delete">Delete</string>
+    <string name="voicemail_callback">Call Back</string>
+
+    <!-- Settings -->
+    <string name="settings_title">Settings</string>
+    <string name="settings_account">Account</string>
+    <string name="settings_phone_numbers">Phone Numbers</string>
+    <string name="settings_audio">Audio Settings</string>
+    <string name="settings_notifications">Notifications</string>
+    <string name="settings_privacy">Privacy &amp; Security</string>
+    <string name="settings_about">About</string>
+    <string name="settings_logout">Logout</string>
+    <string name="settings_version">Version %1$s</string>
+
+    <!-- Authentication -->
+    <string name="login_title">Sign In</string>
+    <string name="login_email">Email</string>
+    <string name="login_password">Password</string>
+    <string name="login_button">Sign In</string>
+    <string name="login_forgot_password">Forgot Password?</string>
+    <string name="login_error">Invalid email or password</string>
+
+    <!-- Status -->
+    <string name="status_registered">Registered</string>
+    <string name="status_registering">Registering…</string>
+    <string name="status_unregistered">Not Registered</string>
+    <string name="status_offline">Offline</string>
+    <string name="status_online">Online</string>
+    <string name="status_connecting">Connecting…</string>
+
+    <!-- Notifications -->
+    <string name="notification_channel_calls">Incoming Calls</string>
+    <string name="notification_channel_calls_desc">Notifications for incoming VoIP calls</string>
+    <string name="notification_channel_missed">Missed Calls</string>
+    <string name="notification_channel_missed_desc">Notifications for missed calls</string>
+    <string name="notification_channel_messages">Messages</string>
+    <string name="notification_channel_messages_desc">Notifications for new messages</string>
+    <string name="notification_channel_service">VoIP Service</string>
+    <string name="notification_channel_service_desc">Keeps VoIP service running</string>
+    <string name="notification_incoming_call">Incoming call from %1$s</string>
+    <string name="notification_missed_call">Missed call from %1$s</string>
+    <string name="notification_service_title">BitNexDial</string>
+    <string name="notification_service_text">Ready to receive calls</string>
+
+    <!-- Errors -->
+    <string name="error_generic">Something went wrong. Please try again.</string>
+    <string name="error_network">No internet connection</string>
+    <string name="error_call_failed">Call failed</string>
+    <string name="error_registration_failed">Registration failed</string>
+    <string name="error_permission_denied">Permission denied</string>
+    <string name="error_mic_permission">Microphone permission required for calls</string>
+    <string name="error_phone_permission">Phone permission required</string>
+
+    <!-- Dialogs -->
+    <string name="dialog_confirm">Confirm</string>
+    <string name="dialog_cancel">Cancel</string>
+    <string name="dialog_ok">OK</string>
+    <string name="dialog_yes">Yes</string>
+    <string name="dialog_no">No</string>
+    <string name="dialog_delete_contact_title">Delete Contact</string>
+    <string name="dialog_delete_contact_message">Are you sure you want to delete this contact?</string>
+    <string name="dialog_logout_title">Logout</string>
+    <string name="dialog_logout_message">Are you sure you want to logout?</string>
+
+    <!-- Accessibility -->
+    <string name="a11y_call_button">Make call</string>
+    <string name="a11y_answer_button">Answer call</string>
+    <string name="a11y_decline_button">Decline call</string>
+    <string name="a11y_end_call_button">End call</string>
+    <string name="a11y_mute_button">Toggle mute</string>
+    <string name="a11y_speaker_button">Toggle speaker</string>
+    <string name="a11y_keypad_button">Show keypad</string>
+    <string name="a11y_delete_button">Delete</string>
+    <string name="a11y_back_button">Go back</string>
+</resources>
